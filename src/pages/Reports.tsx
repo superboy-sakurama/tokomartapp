@@ -16,7 +16,7 @@ import {
   LiquidityData,
 } from "../services/reports";
 import { IDebt } from "../types/finance";
-import { addDebt, updateDebtStatus } from "../app/actions/admin-actions";
+import { addDebt, updateDebtStatus, addOperationalExpense } from "../app/actions/admin-actions";
 
 export function Reports() {
   const [activeTab, setActiveTab] = useState<
@@ -40,6 +40,9 @@ export function Reports() {
   const [debtsData, setDebtsData] = useState<IDebt[]>([]);
   const [isAddingDebt, setIsAddingDebt] = useState(false);
   const [debtFormLoading, setDebtFormLoading] = useState(false);
+  
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [expenseFormLoading, setExpenseFormLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -78,6 +81,31 @@ export function Reports() {
       alert("Error: " + err.message);
     } finally {
       setDebtFormLoading(false);
+    }
+  };
+
+  const handleAddExpense = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setExpenseFormLoading(true);
+    try {
+      const formData = new FormData(e.currentTarget);
+      const res = await addOperationalExpense(formData);
+      if (res.success) {
+        // Reload profit loss and liquidity data
+        const [pl, liq] = await Promise.all([
+          ReportsService.getProfitLoss(),
+          ReportsService.getLiquidity(),
+        ]);
+        setProfitLossData(pl);
+        setLiquidityData(liq);
+        setIsAddingExpense(false);
+      } else {
+        alert(res.error || "Gagal mencatat pengeluaran.");
+      }
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setExpenseFormLoading(false);
     }
   };
 
@@ -191,14 +219,56 @@ export function Reports() {
                         Gaji, utilitas, sewa, dll.
                       </p>
                     </div>
-                    <p className="text-xl font-bold text-red-600">
-                      - Rp{" "}
-                      {profitLossData.operationalExpenses.toLocaleString(
-                        "id-ID",
-                      )}
-                    </p>
+                    <div className="flex items-center gap-4">
+                      <p className="text-xl font-bold text-red-600">
+                        - Rp{" "}
+                        {profitLossData.operationalExpenses.toLocaleString(
+                          "id-ID",
+                        )}
+                      </p>
+                      <button 
+                         onClick={() => setIsAddingExpense(!isAddingExpense)}
+                         className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                         {isAddingExpense ? "Tutup Form" : "Atur Pengeluaran"}
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {isAddingExpense && (
+                  <div className="p-6 bg-white border border-red-100 shadow-sm rounded-xl animate-in slide-in-from-top-2">
+                    <h3 className="font-bold text-gray-900 mb-4">Catat Pengeluaran Operasional Baru</h3>
+                    <form onSubmit={handleAddExpense} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi *</label>
+                        <input type="text" name="description" required placeholder="Cth: Bayar Listrik Bulan Ini" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                        <select name="category" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-red-500">
+                           <option value="Utilitas">Listrik & Air</option>
+                           <option value="Gaji">Gaji Karyawan</option>
+                           <option value="Sewa">Sewa Tempat</option>
+                           <option value="Lainnya">Lainnya</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp) *</label>
+                        <input type="number" name="amount" required min="1" placeholder="Cth: 500000" className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal *</label>
+                        <input type="date" name="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full border border-gray-300 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-red-500" />
+                      </div>
+                      <div className="md:col-span-2">
+                         <button type="submit" disabled={expenseFormLoading} className="w-full sm:w-auto px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white font-bold rounded-lg shadow-sm">
+                           {expenseFormLoading ? "Memproses..." : "Simpan Pengeluaran"}
+                         </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
 
                 <div className="flex justify-between items-end border-t-2 border-gray-900 pt-6 mt-6">
                   <div>
