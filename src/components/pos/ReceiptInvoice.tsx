@@ -47,7 +47,7 @@ export function ReceiptInvoice({ transaction, onBack, showSuccessHeader = true }
       margin:       10,
       filename:     `Struk_${receipt_number}.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas:  { scale: 2 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
       jsPDF:        { unit: 'mm' as const, format: 'a4', orientation: 'portrait' as const }
     };
 
