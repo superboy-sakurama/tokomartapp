@@ -60,6 +60,37 @@ export async function createNewUser(
 }
 
 /**
+ * 4. Tambah Pengeluaran Operasional
+ */
+export async function addOperationalExpense(formData: FormData): Promise<ServerResponse> {
+  try {
+    const description = formData.get("description") as string;
+    const amount = Number(formData.get("amount"));
+    const category = formData.get("category") as string;
+    const date = formData.get("date") as string;
+
+    if (!description || !amount || !date) {
+      return { success: false, error: "Deskripsi, jumlah, dan tanggal wajib diisi." };
+    }
+
+    const { data, error } = await supabase
+      .from("operational_expenses")
+      .insert([{ description, amount, category, date }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[Expense API] Error:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: "Pengeluaran berhasil dicatat", data };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Terjadi kesalahan sistem" };
+  }
+}
+
+/**
  * 2. Menambahkan hutang/piutang baru
  */
 export async function addDebt(formData: FormData): Promise<ServerResponse> {
