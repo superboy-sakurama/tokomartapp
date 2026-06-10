@@ -16,6 +16,9 @@ export interface TransactionPayload {
   amount_paid: number;
   payment_method: PaymentMethod;
   user_id: string;
+  customer_id?: string | null;
+  pay_debt?: boolean; // If true, the system should mark unpaid transactions as paid
+  unpaid_debts?: any[]; // The list of unpaid debts fetched
 }
 
 export interface TransactionResponse {
